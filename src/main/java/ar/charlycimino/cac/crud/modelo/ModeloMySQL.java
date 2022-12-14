@@ -18,6 +18,9 @@ public class ModeloMySQL implements Modelo {
     
     private static final String GET_ALL_QUERY = "SELECT * FROM alumnos";
     private static final String GET_BY_ID_QUERY = "SELECT * FROM alumnos WHERE id = ?";
+    private static final String DELETE_QUERY = "DELETE FROM alumnos WHERE id = ?";
+    private static final String UPDATE_QUERY = "UPDATE alumnos SET nombre=?, apellido=?, mail=?, fechaNac=?, fotobase64=? WHERE id=?";
+    private static final String ADD_QUERY = "INSERT INTO alumnos VALUES(null, ?, ?, ?, ?, ?)";
     
     @Override
     public List<Alumno> getAlumnos() {
@@ -58,17 +61,59 @@ public class ModeloMySQL implements Modelo {
 
     @Override
     public int addAlumno(Alumno alumno) {
-        return 0;
+        int regsAgregados = 0;
+        try ( Connection con = Conexion.getConnection();
+              PreparedStatement ps = con.prepareStatement(ADD_QUERY);
+                ) {
+            fillPreparedStatement(ps, alumno);
+            regsAgregados = ps.executeUpdate();            
+        } catch(SQLException e) {
+            throw new RuntimeException("Error de SQL", e);
+        } catch (Exception ex) {
+            throw new RuntimeException("Error al borrar alumno", ex);
+        }
+        return regsAgregados;
     }
 
     @Override
     public int updateAlumno(Alumno alumno) {
-        return 0;
+        int regsActualizados = 0;
+        try ( Connection con = Conexion.getConnection();
+              PreparedStatement ps = con.prepareStatement(UPDATE_QUERY);
+                ) {
+            fillPreparedStatement(ps, alumno);
+            ps.setInt(6, alumno.getId());
+            regsActualizados = ps.executeUpdate();            
+        } catch(SQLException e) {
+            throw new RuntimeException("Error de SQL", e);
+        } catch (Exception ex) {
+            throw new RuntimeException("Error al borrar alumno", ex);
+        }
+        return regsActualizados;
     }
 
     @Override
     public int removeAlumno(int id) {
-        return 0;
+        int regsBorrados = 0;
+        try ( Connection con = Conexion.getConnection();
+              PreparedStatement ps = con.prepareStatement(DELETE_QUERY);
+                ) {
+            ps.setInt(1, id);
+            regsBorrados = ps.executeUpdate();            
+        } catch(SQLException e) {
+            throw new RuntimeException("Error de SQL", e);
+        } catch (Exception ex) {
+            throw new RuntimeException("Error al borrar alumno", ex);
+        }
+        return regsBorrados;
+    }
+    
+    private void fillPreparedStatement(PreparedStatement ps, Alumno alu) throws SQLException {
+        ps.setString(1, alu.getNombre());
+        ps.setString(2, alu.getApellido());
+        ps.setString(3, alu.getMail());
+        ps.setString(4, alu.getFechaNacimiento());
+        ps.setString(5, alu.getFoto());        
     }
     
     private Alumno rsToAlumno(ResultSet rs) throws SQLException {
